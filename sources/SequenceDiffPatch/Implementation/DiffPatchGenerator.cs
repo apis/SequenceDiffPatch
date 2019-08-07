@@ -31,7 +31,7 @@ namespace SequenceDiffPatch.Implementation
 					break;
 
 				stack.Push(new CellAction<T>{
-					ActionType = GetDiffActionType(direction, columnHeaders[currentCell.X], rowHeaders[currentCell.Y]),
+					ActionType = GetDiffPatchActionType(direction, columnHeaders[currentCell.X], rowHeaders[currentCell.Y]),
 					SourceItem = columnHeaders[currentCell.X],
 					DestinationItem = rowHeaders[currentCell.Y]});
 				currentCell = newCurrentCell;
@@ -53,44 +53,23 @@ namespace SequenceDiffPatch.Implementation
 			return ProducePatch(ProduceDiff(source, destination), includeSameItems);
 		}
 
-		private DiffPatchActionType ConvertToDiffPatchActionType(DiffActionType diffActionType)
-		{
-			switch (diffActionType)
-			{
-				case DiffActionType.Same:
-					return DiffPatchActionType.Same;
-
-				case DiffActionType.Insert:
-					return DiffPatchActionType.Insert;
-
-				case DiffActionType.Remove:
-					return DiffPatchActionType.Remove;
-
-				case DiffActionType.Replace:
-					return DiffPatchActionType.Replace;
-
-				default:
-					throw new Exception("Unexpected DiffActionType");
-			}
-		}
-
 		private IList<IDiffPatchAction<T>> ProducePatch<T>(IList<CellAction<T>> diffActions, bool includeSameItems)
 		{
 			IList<IDiffPatchAction<T>> patchActions = new List<IDiffPatchAction<T>>();
 			IList<T> items = new List<T>();
-			var currentDiffActionType = (DiffActionType)(-1);
+			var currentDiffPatchActionType = (DiffPatchActionType)(-1);
 			var sourceIndex = 0;
 			var chunkIndex = sourceIndex;
 
 			for (var index = 0; index < diffActions.Count; index++)
 			{
 				var diffAction = diffActions[index];
-				if (diffAction.ActionType != currentDiffActionType)
+				if (diffAction.ActionType != currentDiffPatchActionType)
 				{
 					if (index != 0)
-						AddDiffPatchAction(patchActions, currentDiffActionType, chunkIndex, items, includeSameItems);
+						AddDiffPatchAction(patchActions, currentDiffPatchActionType, chunkIndex, items, includeSameItems);
 
-					currentDiffActionType = diffAction.ActionType;
+					currentDiffPatchActionType = diffAction.ActionType;
 					items = new List<T>();
 					chunkIndex = sourceIndex;
 				}
@@ -99,38 +78,38 @@ namespace SequenceDiffPatch.Implementation
 			}
 
 			if (diffActions.Count != 0)
-				AddDiffPatchAction(patchActions, currentDiffActionType, chunkIndex, items, includeSameItems);
+				AddDiffPatchAction(patchActions, currentDiffPatchActionType, chunkIndex, items, includeSameItems);
 
 			return patchActions;
 		}
 
-		private void AddDiffPatchAction<T>(IList<IDiffPatchAction<T>> patchActions, DiffActionType currentDiffActionType, int chunkIndex, IList<T> items, bool includeSameItems)
+		private void AddDiffPatchAction<T>(IList<IDiffPatchAction<T>> patchActions, DiffPatchActionType currentDiffPatchActionType, int chunkIndex, IList<T> items, bool includeSameItems)
 		{
-			if (currentDiffActionType == DiffActionType.Same && !includeSameItems)
+			if (currentDiffPatchActionType == DiffPatchActionType.Same && !includeSameItems)
 				return;
 
-			patchActions.Add(new DiffPatchAction<T>(ConvertToDiffPatchActionType(currentDiffActionType), chunkIndex, items));
+			patchActions.Add(new DiffPatchAction<T>(currentDiffPatchActionType, chunkIndex, items));
 		}
 
 		private static void AddDiffActionType<T>(CellAction<T> diffAction, IList<T> items, ref int sourceIndex)
 		{
 			switch (diffAction.ActionType)
 			{
-				case DiffActionType.Same:
+				case DiffPatchActionType.Same:
 					sourceIndex++;
 					items.Add(diffAction.SourceItem);
 					break;
 
-				case DiffActionType.Insert:
+				case DiffPatchActionType.Insert:
 					items.Add(diffAction.DestinationItem);
 					break;
 
-				case DiffActionType.Replace:
+				case DiffPatchActionType.Replace:
 					sourceIndex++;
 					items.Add(diffAction.DestinationItem);
 					break;
 
-				case DiffActionType.Remove:
+				case DiffPatchActionType.Remove:
 					sourceIndex++;
 					items.Add(diffAction.SourceItem);
 					break;
@@ -194,18 +173,18 @@ namespace SequenceDiffPatch.Implementation
 			}
 		}
 
-		private DiffActionType GetDiffActionType<T>(Direction direction, T sourceItem, T destinationItem)
+		private DiffPatchActionType GetDiffPatchActionType<T>(Direction direction, T sourceItem, T destinationItem)
 		{
 			switch (direction)
 			{
 				case Direction.Diagonal:
-					return sourceItem.Equals(destinationItem) ? DiffActionType.Same : DiffActionType.Replace;
+					return sourceItem.Equals(destinationItem) ? DiffPatchActionType.Same : DiffPatchActionType.Replace;
 
 				case Direction.Left:
-					return DiffActionType.Remove;
+					return DiffPatchActionType.Remove;
 
 				case Direction.Up:
-					return DiffActionType.Insert;
+					return DiffPatchActionType.Insert;
 
 				default:
 					throw new Exception("Unexpected cell direction");

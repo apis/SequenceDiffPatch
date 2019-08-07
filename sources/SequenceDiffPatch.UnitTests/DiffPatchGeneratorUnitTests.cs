@@ -27,6 +27,28 @@ namespace SequenceDiffPatch.UnitTests
 		}
 
 		[Test]
+		public void EmptySource()
+		{
+			var patch = _diffPatchGenerator.ProduceDiffPatch("".ToList(), "321".ToList());
+
+			Assert.That(patch, Is.EquivalentTo(new List<IDiffPatchAction<char>>
+			{
+				new DiffPatchAction<char>(DiffPatchActionType.Insert, 0, "321".ToList())
+			}));
+		}
+
+		[Test]
+		public void EmptyDestination()
+		{
+			var patch = _diffPatchGenerator.ProduceDiffPatch("876".ToList(), "".ToList());
+
+			Assert.That(patch, Is.EquivalentTo(new List<IDiffPatchAction<char>>
+			{
+				new DiffPatchAction<char>(DiffPatchActionType.Remove, 0, "876".ToList())
+			}));
+		}
+
+		[Test]
 		public void Scenario1()
 		{
 			var patch = _diffPatchGenerator.ProduceDiffPatch("ABCDCBA".ToList(), "DCBAABB".ToList());

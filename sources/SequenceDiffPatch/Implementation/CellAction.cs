@@ -2,7 +2,7 @@
 {
 	internal class CellAction<T>
 	{
-		public DiffActionType ActionType { get; set; }
+		public DiffPatchActionType ActionType { get; set; }
 
 		public T SourceItem { get; set; }
 
