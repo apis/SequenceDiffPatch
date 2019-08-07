@@ -39,6 +39,19 @@ namespace SequenceDiffPatch.UnitTests
 		}
 
 		[Test]
+		public void Scenario1IncludeSameItems()
+		{
+			var patch = _diffPatchGenerator.ProduceDiffPatch("ABCDCBA".ToList(), "DCBAABB".ToList(), true);
+
+			Assert.That(patch, Is.EquivalentTo(new List<IDiffPatchAction<char>>
+			{
+				new DiffPatchAction<char>(DiffPatchActionType.Remove, 0, "ABC".ToList()),
+				new DiffPatchAction<char>(DiffPatchActionType.Same, 3, "DCBA".ToList()),
+				new DiffPatchAction<char>(DiffPatchActionType.Insert, 7, "ABB".ToList())
+			}));
+		}
+
+		[Test]
 		public void Scenario2()
 		{
 			var patch = _diffPatchGenerator.ProduceDiffPatch("ABCDCBA2345".ToList(), "DCBAABD".ToList());
@@ -46,6 +59,20 @@ namespace SequenceDiffPatch.UnitTests
 			Assert.That(patch, Is.EquivalentTo(new List<IDiffPatchAction<char>>
 			{
 				new DiffPatchAction<char>(DiffPatchActionType.Remove, 0, "ABC".ToList()),
+				new DiffPatchAction<char>(DiffPatchActionType.Remove, 7, "2".ToList()),
+				new DiffPatchAction<char>(DiffPatchActionType.Replace, 8, "ABD".ToList())
+			}));
+		}
+
+		[Test]
+		public void Scenario2IncludeSameItems()
+		{
+			var patch = _diffPatchGenerator.ProduceDiffPatch("ABCDCBA2345".ToList(), "DCBAABD".ToList(), true);
+
+			Assert.That(patch, Is.EquivalentTo(new List<IDiffPatchAction<char>>
+			{
+				new DiffPatchAction<char>(DiffPatchActionType.Remove, 0, "ABC".ToList()),
+				new DiffPatchAction<char>(DiffPatchActionType.Same, 3, "DCBA".ToList()),
 				new DiffPatchAction<char>(DiffPatchActionType.Remove, 7, "2".ToList()),
 				new DiffPatchAction<char>(DiffPatchActionType.Replace, 8, "ABD".ToList())
 			}));
@@ -60,6 +87,22 @@ namespace SequenceDiffPatch.UnitTests
 			{
 				new DiffPatchAction<char>(DiffPatchActionType.Insert, 2, "1".ToList()),
 				new DiffPatchAction<char>(DiffPatchActionType.Insert, 5, "2".ToList()),
+				new DiffPatchAction<char>(DiffPatchActionType.Remove, 7, "H".ToList())
+			}));
+		}
+
+		[Test]
+		public void Scenario3IncludeSameItems()
+		{
+			var patch = _diffPatchGenerator.ProduceDiffPatch("ABCDEFGH".ToList(), "AB1CDE2FG".ToList(), true);
+
+			Assert.That(patch, Is.EquivalentTo(new List<IDiffPatchAction<char>>
+			{
+				new DiffPatchAction<char>(DiffPatchActionType.Same, 0, "AB".ToList()),
+				new DiffPatchAction<char>(DiffPatchActionType.Insert, 2, "1".ToList()),
+				new DiffPatchAction<char>(DiffPatchActionType.Same, 2, "CDE".ToList()),
+				new DiffPatchAction<char>(DiffPatchActionType.Insert, 5, "2".ToList()),
+				new DiffPatchAction<char>(DiffPatchActionType.Same, 5, "FG".ToList()),
 				new DiffPatchAction<char>(DiffPatchActionType.Remove, 7, "H".ToList())
 			}));
 		}

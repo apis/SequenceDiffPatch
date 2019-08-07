@@ -4,6 +4,6 @@ namespace SequenceDiffPatch
 {
 	public interface IDiffPatchGenerator
 	{
-		IList<IDiffPatchAction<T>> ProduceDiffPatch<T>(IList<T> source, IList<T> destination);
+		IList<IDiffPatchAction<T>> ProduceDiffPatch<T>(IList<T> source, IList<T> destination, bool includeSameItems = false);
 	}
 }

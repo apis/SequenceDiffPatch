@@ -2,8 +2,9 @@
 {
 	public enum DiffPatchActionType
 	{
-		Replace,
+		Same,
 		Insert,
-		Remove
+		Remove,
+		Replace
 	}
 }

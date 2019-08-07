@@ -48,15 +48,18 @@ namespace SequenceDiffPatch.Implementation
 			return resultList;
 		}
 
-		public IList<IDiffPatchAction<T>> ProduceDiffPatch<T>(IList<T> source, IList<T> destination)
+		public IList<IDiffPatchAction<T>> ProduceDiffPatch<T>(IList<T> source, IList<T> destination, bool includeSameItems)
 		{
-			return ProducePatch(ProduceDiff(source, destination));
+			return ProducePatch(ProduceDiff(source, destination), includeSameItems);
 		}
 
 		private DiffPatchActionType ConvertToDiffPatchActionType(DiffActionType diffActionType)
 		{
 			switch (diffActionType)
 			{
+				case DiffActionType.Same:
+					return DiffPatchActionType.Same;
+
 				case DiffActionType.Insert:
 					return DiffPatchActionType.Insert;
 
@@ -71,22 +74,21 @@ namespace SequenceDiffPatch.Implementation
 			}
 		}
 
-		private IList<IDiffPatchAction<T>> ProducePatch<T>(IList<CellAction<T>> diffActions)
+		private IList<IDiffPatchAction<T>> ProducePatch<T>(IList<CellAction<T>> diffActions, bool includeSameItems)
 		{
 			IList<IDiffPatchAction<T>> patchActions = new List<IDiffPatchAction<T>>();
 			IList<T> items = new List<T>();
-			var currentDiffActionType = DiffActionType.Same;
+			var currentDiffActionType = (DiffActionType)(-1);
 			var sourceIndex = 0;
 			var chunkIndex = sourceIndex;
 
-			foreach (var diffAction in diffActions)
+			for (var index = 0; index < diffActions.Count; index++)
 			{
+				var diffAction = diffActions[index];
 				if (diffAction.ActionType != currentDiffActionType)
 				{
-					if (currentDiffActionType != DiffActionType.Same)
-					{
-						patchActions.Add(new DiffPatchAction<T>(ConvertToDiffPatchActionType(currentDiffActionType), chunkIndex, items));
-					}
+					if (index != 0)
+						AddDiffPatchAction(patchActions, currentDiffActionType, chunkIndex, items, includeSameItems);
 
 					currentDiffActionType = diffAction.ActionType;
 					items = new List<T>();
@@ -96,12 +98,18 @@ namespace SequenceDiffPatch.Implementation
 				AddDiffActionType(diffAction, items, ref sourceIndex);
 			}
 
-			if (currentDiffActionType != DiffActionType.Same)
-			{
-				patchActions.Add(new DiffPatchAction<T>(ConvertToDiffPatchActionType(currentDiffActionType), chunkIndex, items));
-			}
+			if (diffActions.Count != 0)
+				AddDiffPatchAction(patchActions, currentDiffActionType, chunkIndex, items, includeSameItems);
 
 			return patchActions;
+		}
+
+		private void AddDiffPatchAction<T>(IList<IDiffPatchAction<T>> patchActions, DiffActionType currentDiffActionType, int chunkIndex, IList<T> items, bool includeSameItems)
+		{
+			if (currentDiffActionType == DiffActionType.Same && !includeSameItems)
+				return;
+
+			patchActions.Add(new DiffPatchAction<T>(ConvertToDiffPatchActionType(currentDiffActionType), chunkIndex, items));
 		}
 
 		private static void AddDiffActionType<T>(CellAction<T> diffAction, IList<T> items, ref int sourceIndex)
@@ -110,6 +118,7 @@ namespace SequenceDiffPatch.Implementation
 			{
 				case DiffActionType.Same:
 					sourceIndex++;
+					items.Add(diffAction.SourceItem);
 					break;
 
 				case DiffActionType.Insert:
